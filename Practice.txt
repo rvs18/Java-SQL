@@ -1,0 +1,638 @@
+* Micro services development
+
+Microservices development is a software architectural style that structures an application as a collection of small, independent services. Each service runs a unique process and communicates through APIs. Key features include:
+
+Decentralization: Each microservice is developed, deployed, and scaled independently.
+Specific Functionality: Each service focuses on a specific business function.
+Technology Diversity: Teams can use different technologies and languages for different services.
+Resilience: Failure in one service doesn’t affect the entire system.
+Scalability: Individual services can be scaled independently based on demand.
+This approach improves flexibility, speed of development, and maintenance but can introduce complexity in managing inter-service communication and data consistency.
+
+
+* RESTful API using Spring Boot for managing a collection of users
+
+
+Create a User Entity:
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String username;
+    private String email;
+
+    // Getters and Setters
+}
+
+Create a Repository Interface:
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+}
+
+Create a REST Controller:
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    @Autowired
+    private UserRepository userRepository;
+
+    @GetMapping
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable(value = "id") Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return ResponseEntity.ok().body(user);
+    }
+
+    @PostMapping
+    public User createUser(@RequestBody User user) {
+        return userRepository.save(user);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable(value = "id") Long userId,
+                                           @RequestBody User userDetails) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        user.setUsername(userDetails.getUsername());
+        user.setEmail(userDetails.getEmail());
+        final User updatedUser = userRepository.save(user);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable(value = "id") Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        userRepository.delete(user);
+        return ResponseEntity.ok().build();
+    }
+}
+
+Create Custom Exception Class:
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(value = HttpStatus.NOT_FOUND)
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+
+Run the Application:
+
+Run the Spring Boot application so that the RESTful API for managing users will be accessible.
+
+
+* CRUD Operations (Create, Read, Update, Delete)
+
+The RESTful API for managing a collection of users serves as a backend service for user management in an application.
+
+Create Users: Users can send HTTP POST requests to /api/users with a JSON payload containing user data such as username and email. This endpoint creates a new user in the system.
+
+@PostMapping("/api/users")
+public ResponseEntity<User> createUser(@RequestBody User user) {
+    User newUser = userRepository.save(user);
+    return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
+}
+
+
+Retrieve Users: Users can send HTTP GET requests to /api/users to retrieve a list of all users stored in the system. They can also retrieve a specific user by sending a GET request to /api/users/{id}, where {id} is the ID of the user.
+
+@GetMapping("/api/users")
+public ResponseEntity<List<User>> getAllUsers() {
+    List<User> users = userRepository.findAll();
+    return ResponseEntity.ok().body(users);
+}
+
+@GetMapping("/api/users/{id}")
+public ResponseEntity<User> getUserById(@PathVariable(value = "id") Long userId) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    return ResponseEntity.ok().body(user);
+}
+
+Update Users: Users can send HTTP PUT requests to /api/users/{id} with a JSON payload containing updated information about a user. This endpoint updates the specified user's data in the system.
+
+@PutMapping("/api/users/{id}")
+public ResponseEntity<User> updateUser(@PathVariable(value = "id") Long userId,
+                                       @RequestBody User userDetails) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    user.setUsername(userDetails.getUsername());
+    user.setEmail(userDetails.getEmail());
+    final User updatedUser = userRepository.save(user);
+    return ResponseEntity.ok(updatedUser);
+}
+
+Delete Users: Users can send HTTP DELETE requests to /api/users/{id} to delete a specific user from the system.
+
+@DeleteMapping("/api/users/{id}")
+public ResponseEntity<?> deleteUser(@PathVariable(value = "id") Long userId) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    userRepository.delete(user);
+    return ResponseEntity.ok().build();
+}
+
+The User Management API provides a CRUD (Create, Read, Update, Delete) interface for managing user data, allowing frontend applications or other services to interact with and manipulate user information.
+
+* Connecting the database
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
+
+public class Main {
+    public static void main(String[] args) {
+        // JDBC URL, username, and password of the database
+        String url = "jdbc:mysql://localhost:3306/mydatabase";
+        String user = "username";
+        String password = "password";
+
+        try {
+            // Establish connection
+            Connection connection = DriverManager.getConnection(url, user, password);
+
+            // Create a statement
+            Statement statement = connection.createStatement();
+
+            // Execute a query
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM mytable");
+
+            // Process the result set
+            while (resultSet.next()) {
+                // Retrieve data from the result set
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                // Print data
+                System.out.println("ID: " + id + ", Name: " + name);
+            }
+
+            // Close connections
+            resultSet.close();
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+* Securing api using spring security
+
+Securing an API using Spring Security involves implementing authentication and authorization mechanisms to control access to the API endpoints. Here's an overview of the steps involved:
+
+Add Spring Security Dependency: Include the Spring Security dependency in the project's pom.xml or build.gradle file.
+
+Configure Spring Security: Create a security configuration class that extends WebSecurityConfigurerAdapter. Override the configure(HttpSecurity http) method to configure security settings such as authentication, authorization, and other security features.
+
+Authentication: Configure how users authenticate themselves. Spring Security supports various authentication methods such as form-based authentication, HTTP Basic authentication, and OAuth.
+
+Authorization: Define access rules to restrict access to specific API endpoints based on roles or permissions. You can configure authorization rules using expressions, annotations, or custom access decision voters.
+
+UserDetailsService: Implement a UserDetailsService to load user details from a database or any other user store. This service is used by Spring Security to authenticate users.
+
+PasswordEncoder: Configure a PasswordEncoder bean to encode passwords securely. Spring Security provides several implementations of PasswordEncoder such as BCryptPasswordEncoder, PasswordEncoderFactories, etc.
+
+Securing Endpoints: Secure the API endpoints by applying method-level security annotations (@PreAuthorize, @Secured, etc.) or configuring HTTP security rules in the security configuration class.
+
+Testing: Write integration tests to verify that the API endpoints are properly secured. Test both authenticated and unauthenticated access to ensure that security measures are effective.
+
+Configuring Spring Security:
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService)
+            .passwordEncoder(passwordEncoder);
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .antMatchers("/api/public/**").permitAll()
+                .antMatchers("/api/private/**").authenticated()
+            .and()
+            .formLogin()
+                .permitAll()
+            .and()
+            .logout()
+                .permitAll();
+    }
+}
+
+In this example, /api/public/** endpoints are accessible without authentication, while /api/private/** endpoints require authentication. UserDetailsService and PasswordEncoder are used for authentication configuration.
+
+* New features introduced in Java 17
+
+Sealed Classes (Preview): Sealed classes and interfaces allow the restriction of which other classes or interfaces may extend or implement them. This helps in creating more maintainable and reliable code by restricting inheritance.
+
+Pattern Matching for switch (Standard): Enhanced switch expressions with pattern matching capabilities. It simplifies code by eliminating repetitive code for variable declaration and type casting.
+
+Foreign Function & Memory API (Incubator): The Foreign Function & Memory API, introduced as an incubator feature, provides a way to call native code and work with native memory from Java.
+
+Deprecating and Removing APIs: Java 17 deprecates and removes several APIs, including the Applet API, Security Manager, RMI Activation, and others.
+
+Sealed Classes in JDK: Certain JDK classes have been made sealed to improve security and maintainability.
+
+Strongly Encapsulate JDK Internals: More JDK internals have been strongly encapsulated to improve security and maintainability.
+
+New macOS Rendering Pipeline: Java 17 introduces a new rendering pipeline for macOS, which is based on the Metal framework.
+
+New Packaging Tool (Incubator): A new tool for packaging self-contained Java applications is introduced as an incubator feature. It aims to replace the existing jlink tool.
+
+Remove Experimental AOT and JIT Compiler: The experimental Ahead-of-Time (AOT) and Just-In-Time (JIT) compiler, which was introduced in Java 9, has been removed due to lack of adoption and maintenance burden.
+
+* Java Streams and lambda expressions to filter data
+
+Suppose we have a list of integers and we want to filter out even numbers from it:
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class Main {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+        // Using lambda expression and stream to filter even numbers
+        List<Integer> evenNumbers = numbers.stream()
+                                           .filter(num -> num % 2 == 0)
+                                           .collect(Collectors.toList());
+
+        System.out.println("Even numbers: " + evenNumbers);
+    }
+}
+
+In this example:
+
+We start with a list of integers numbers.
+We call the stream() method on the list to create a stream of elements.
+We use the filter() method to specify a predicate (a lambda expression num -> num % 2 == 0) that selects only even numbers.
+We use the collect() method with Collectors.toList() to collect the filtered elements into a new list.
+The lambda expression num -> num % 2 == 0 is used as the predicate for the filter() method. It checks whether each number in the stream is even (i.e, when divided by 2, the remainder is 0).
+
+* Implement your own caching
+
+Implementing a simple in-memory cache in Java: 
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class SimpleCache<K, V> {
+    private final Map<K, V> cacheMap;
+    private final long expirationTime; // Time in milliseconds
+
+    public SimpleCache(long expirationTime) {
+        this.cacheMap = new HashMap<>();
+        this.expirationTime = expirationTime;
+    }
+
+    public synchronized void put(K key, V value) {
+        cacheMap.put(key, value);
+    }
+
+    public synchronized V get(K key) {
+        if (!cacheMap.containsKey(key)) {
+            return null; // Cache miss
+        }
+        
+        V value = cacheMap.get(key);
+        if (isExpired(key)) {
+            cacheMap.remove(key);
+            return null; // Cache expired
+        }
+        
+        return value;
+    }
+
+    private boolean isExpired(K key) {
+        // Check if the key has expired based on the expiration time
+        // You can implement this based on creation time or last access time
+        // For simplicity, we're using a fixed expiration time
+        // You might want to implement a more sophisticated expiration mechanism
+        return System.currentTimeMillis() - cacheMap.get(key) > expirationTime;
+    }
+}
+
+In this implementation:
+
+SimpleCache is a generic class that takes two parameters K for the key type and V for the value type.
+The cache is backed by a HashMap.
+The put method stores the key-value pair in the map.
+The get method retrieves the value associated with the key. If the key is not found or the cached value has expired, it returns null.
+The isExpired method checks if a cached value has expired based on a fixed expiration time.
+
+* Write a program using Java CompletableFuture to parallelly execute tasks
+
+Simple Java program that demonstrates parallel execution of tasks using the CompletableFuture class, which is part of the java.util.concurrent package 
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+public class ParallelTaskExecution {
+    public static void main(String[] args) {
+        // Define tasks to be executed in parallel
+        CompletableFuture<String> task1 = CompletableFuture.supplyAsync(() -> {
+            try {
+                // Simulate some computation
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return "Task 1 completed";
+        });
+
+        CompletableFuture<String> task2 = CompletableFuture.supplyAsync(() -> {
+            try {
+                // Simulate some computation
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return "Task 2 completed";
+        });
+
+        CompletableFuture<String> task3 = CompletableFuture.supplyAsync(() -> {
+            try {
+                // Simulate some computation
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return "Task 3 completed";
+        });
+
+        // Combine tasks and get the results
+        try {
+            String result1 = task1.get();
+            String result2 = task2.get();
+            String result3 = task3.get();
+
+            // Print results
+            System.out.println(result1);
+            System.out.println(result2);
+            System.out.println(result3);
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+In this program:
+
+We define three tasks (task1, task2, and task3) using CompletableFuture.supplyAsync() method. Each task simulates some computation by sleeping for a certain amount of time.
+The supplyAsync() method starts a new asynchronous task and returns a CompletableFuture representing the result of the computation.
+We then combine these tasks using the get() method, which waits for the completion of each task and retrieves its result. Since get() is a blocking call, it waits until the task completes before moving on to the next task.
+Finally, we print the results of each task.
+
+* Concurrency matrix multiplication algorithm
+
+Basic outline of how we can implement a concurrent matrix multiplication algorithm in Java:
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class ConcurrentMatrixMultiplication {
+    private static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
+    private static final ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
+
+    public static void main(String[] args) {
+        // Example matrices
+        int[][] matrix1 = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+        int[][] matrix2 = {{9, 8, 7}, {6, 5, 4}, {3, 2, 1}};
+
+        // Result matrix
+        int[][] result = new int[matrix1.length][matrix2[0].length];
+
+        // Submit tasks for each row-column multiplication
+        for (int i = 0; i < matrix1.length; i++) {
+            for (int j = 0; j < matrix2[0].length; j++) {
+                final int row = i;
+                final int col = j;
+                executor.submit(() -> {
+                    result[row][col] = multiplyRowColumn(matrix1, matrix2, row, col);
+                });
+            }
+        }
+
+        // Shutdown executor and wait for tasks to complete
+        executor.shutdown();
+        try {
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Print result matrix
+        for (int[] row : result) {
+            for (int cell : row) {
+                System.out.print(cell + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    private static int multiplyRowColumn(int[][] matrix1, int[][] matrix2, int row, int col) {
+        int result = 0;
+        for (int i = 0; i < matrix1[row].length; i++) {
+            result += matrix1[row][i] * matrix2[i][col];
+        }
+        return result;
+    }
+}
+
+In this implementation:
+
+We define a thread pool with a fixed number of threads (NUM_THREADS) based on the number of available processors.
+We submit tasks to the executor for each cell in the result matrix, where each task calculates the value of a single cell by multiplying the corresponding row of the first matrix with the corresponding column of the second matrix.
+We then wait for all tasks to complete using executor.awaitTermination().
+Finally, we print the resulting matrix.
+
+* Date-Time API
+
+Parse the string, validate it, and convert to local date time object
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
+public class DateTimeParsing {
+    public static void main(String[] args) {
+        // Input string representing date-time
+        String dateTimeString = "2024-05-15T12:30:45";
+
+        // Define the date-time format expected in the input string
+        String pattern = "yyyy-MM-dd'T'HH:mm:ss";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+
+        try {
+            // Parse the input string into a LocalDateTime object
+            LocalDateTime dateTime = LocalDateTime.parse(dateTimeString, formatter);
+
+            // Validate the parsed LocalDateTime object (optional)
+            if (isValidDateTime(dateTime)) {
+                System.out.println("Parsed LocalDateTime: " + dateTime);
+            } else {
+                System.out.println("Invalid date-time format");
+            }
+        } catch (DateTimeParseException e) {
+            System.out.println("Error parsing date-time: " + e.getMessage());
+        }
+    }
+
+    private static boolean isValidDateTime(LocalDateTime dateTime) {
+        // Add any custom validation logic here
+        // For example, you can check if the parsed date-time falls within a certain range
+        return true; // For simplicity, assuming all parsed date-times are valid
+    }
+}
+
+
+In this example:
+
+We have a string dateTimeString representing a date-time in the format "yyyy-MM-dd'T'HH:mm:ss".
+We define a DateTimeFormatter object formatter with the specified pattern.
+We use LocalDateTime.parse() method to parse the input string into a LocalDateTime object, using the defined formatter.
+We can optionally validate the parsed LocalDateTime object using custom logic in the isValidDateTime() method.
+If the input string is successfully parsed and passes validation, we print the parsed LocalDateTime object.
+
+* Given Two strings, compare them and find the difference in time.
+
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+
+public class TimeDifference {
+    public static void main(String[] args) {
+        // Input strings representing time
+        String timeString1 = "10:30:00";
+        String timeString2 = "12:45:30";
+
+        // Define the time format expected in the input strings
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        // Parse the input strings into LocalTime objects
+        LocalTime time1 = LocalTime.parse(timeString1, formatter);
+        LocalTime time2 = LocalTime.parse(timeString2, formatter);
+
+        // Calculate the difference between the two times
+        long hoursDiff = Math.abs(ChronoUnit.HOURS.between(time1, time2));
+        long minutesDiff = Math.abs(ChronoUnit.MINUTES.between(time1, time2));
+        long secondsDiff = Math.abs(ChronoUnit.SECONDS.between(time1, time2));
+
+        // Output the difference in time
+        System.out.println("Difference in time:");
+        System.out.println("Hours: " + hoursDiff);
+        System.out.println("Minutes: " + minutesDiff);
+        System.out.println("Seconds: " + secondsDiff);
+    }
+}
+
+In this code:
+
+We have two input strings timeString1 and timeString2 representing times in the format "HH:mm:ss".
+We define a DateTimeFormatter object formatter with the specified pattern.
+We use LocalTime.parse() method to parse the input strings into LocalTime objects, using the defined formatter.
+We calculate the difference between the two times using the ChronoUnit class, which provides various units of time (such as hours, minutes, and seconds) for calculating temporal differences.
+Finally, we output the difference in hours, minutes, and seconds between the two times.
+
+----------- SQL --------------
+
+* SQL Query for Nth highest element in a table
+
+SELECT column_name 
+FROM table_name 
+ORDER BY column_name DESC 
+LIMIT N-1, 1;
+
+
+We use ORDER BY column_name DESC to sort the values in descending order. This places the highest value at the top.
+We use LIMIT N-1, 1 to limit the result set to the single row at the Nth position (excluding the first N-1 rows). The N-1 skips the first N-1 rows, and 1 limits the result set to 1 row.
+
+For example, to find the 5th highest element in a table named my_table with a column named value, the query would be:
+
+SELECT value 
+FROM my_table 
+ORDER BY value DESC 
+LIMIT 4, 1;
+
+This query returns the 5th highest value in the value column of the my_table table.
+
+* SQL Query to find out the second highest marks subject wise
+
+For example, if you have a table named marks_table with columns subject and marks, the query would be:
+
+SELECT subject, marks
+FROM (
+    SELECT subject, marks, RANK() OVER (PARTITION BY subject ORDER BY marks DESC) AS rank
+    FROM marks_table
+) ranked_marks
+WHERE rank = 2;
+
+Explanation of the query:
+
+The inner subquery selects the subject, marks, and assigns a rank to each row within each subject group, ordered by marks in descending order.
+The RANK() function assigns a unique rank to each row within each subject group based on the marks, where the highest marks get rank 1, the second-highest gets rank 2, and so on.
+The outer query selects rows where the rank is equal to 2, which corresponds to the second-highest marks in each subject.
+
+This query will return the subject and marks of the second-highest marks subject-wise in the marks_table.
+
+* SQL query using the GROUP BY clause:
+
+Let's say we have a table named sales with four columns (id, product, category, amount). To find the total amount of sales for each category, you can use the following SQL query:
+
+SELECT category, SUM(amount) AS total_sales
+FROM sales
+GROUP BY category;
+
+
+
+
+
+
