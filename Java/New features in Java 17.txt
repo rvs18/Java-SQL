@@ -1,0 +1,19 @@
+New features introduced in Java 17
+
+Sealed Classes (Preview): Sealed classes and interfaces allow the restriction of which other classes or interfaces may extend or implement them. This helps in creating more maintainable and reliable code by restricting inheritance.
+
+Pattern Matching for switch (Standard): Enhanced switch expressions with pattern matching capabilities. It simplifies code by eliminating repetitive code for variable declaration and type casting.
+
+Foreign Function & Memory API (Incubator): The Foreign Function & Memory API, introduced as an incubator feature, provides a way to call native code and work with native memory from Java.
+
+Deprecating and Removing APIs: Java 17 deprecates and removes several APIs, including the Applet API, Security Manager, RMI Activation, and others.
+
+Sealed Classes in JDK: Certain JDK classes have been made sealed to improve security and maintainability.
+
+Strongly Encapsulate JDK Internals: More JDK internals have been strongly encapsulated to improve security and maintainability.
+
+New macOS Rendering Pipeline: Java 17 introduces a new rendering pipeline for macOS, which is based on the Metal framework.
+
+New Packaging Tool (Incubator): A new tool for packaging self-contained Java applications is introduced as an incubator feature. It aims to replace the existing jlink tool.
+
+Remove Experimental AOT and JIT Compiler: The experimental Ahead-of-Time (AOT) and Just-In-Time (JIT) compiler, which was introduced in Java 9, has been removed due to lack of adoption and maintenance burden.
