@@ -1,0 +1,46 @@
+// SQL Query for Nth highest element in a table
+
+SELECT column_name 
+FROM table_name 
+ORDER BY column_name DESC 
+LIMIT N-1, 1;
+
+
+We use ORDER BY column_name DESC to sort the values in descending order. This places the highest value at the top.
+We use LIMIT N-1, 1 to limit the result set to the single row at the Nth position (excluding the first N-1 rows). The N-1 skips the first N-1 rows, and 1 limits the result set to 1 row.
+
+For example, to find the 5th highest element in a table named my_table with a column named value, the query would be:
+
+SELECT value 
+FROM my_table 
+ORDER BY value DESC 
+LIMIT 4, 1;
+
+This query returns the 5th highest value in the value column of the my_table table.
+
+// SQL Query to find out the second highest marks subject wise
+
+For example, if you have a table named marks_table with columns subject and marks, the query would be:
+
+SELECT subject, marks
+FROM (
+    SELECT subject, marks, RANK() OVER (PARTITION BY subject ORDER BY marks DESC) AS rank
+    FROM marks_table
+) ranked_marks
+WHERE rank = 2;
+
+Explanation of the query:
+
+The inner subquery selects the subject, marks, and assigns a rank to each row within each subject group, ordered by marks in descending order.
+The RANK() function assigns a unique rank to each row within each subject group based on the marks, where the highest marks get rank 1, the second-highest gets rank 2, and so on.
+The outer query selects rows where the rank is equal to 2, which corresponds to the second-highest marks in each subject.
+
+This query will return the subject and marks of the second-highest marks subject-wise in the marks_table.
+
+// SQL query using the GROUP BY clause:
+
+Let's say we have a table named sales with four columns (id, product, category, amount). To find the total amount of sales for each category, you can use the following SQL query:
+
+SELECT category, SUM(amount) AS total_sales
+FROM sales
+GROUP BY category;
